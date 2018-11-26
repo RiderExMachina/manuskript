@@ -67,6 +67,9 @@ class pandocExporter(basicExporter):
             if var and item and item.text().strip():
                 args.append("--variable={}:{}".format(var, item.text().strip()))
 
+        # Add title metatadata required for pandoc >= 2.x
+        args.append("--metadata=title:{}".format(mainWindow().mdlFlatData.item(0, 0).text().strip()))
+
         qApp.setOverrideCursor(QCursor(Qt.WaitCursor))
 
         p = subprocess.Popen(
@@ -83,8 +86,11 @@ class pandocExporter(basicExporter):
 
         qApp.restoreOverrideCursor()
 
-        if stderr:
-            err = stderr.decode("utf-8")
+        if stderr or p.returncode != 0:
+            err = "ERROR on export" + "\n" \
+                + "Return code" + ": %d\n" % (p.returncode) \
+                + "Command and parameters" + ":\n%s\n" % (p.args) \
+                + "Stderr content" + ":\n" + stderr.decode("utf-8") 
             print(err)
             QMessageBox.critical(mainWindow().dialog, qApp.translate("Export", "Error"), err)
             return None
